@@ -82,6 +82,7 @@ export function MoneyPlan({ data }: { data: FinanceData }) {
             >
               {t("newPeriod")}
             </Button>
+            <p className="muted small">{t("newPeriodHint")}</p>
           </form>
         </section>
         <section className="panel">

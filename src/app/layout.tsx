@@ -7,11 +7,11 @@ import "@fontsource/noto-sans-ethiopic/600.css";
 
 export const metadata: Metadata = {
   title: {
-    default: "LastBirr — Make every birr last.",
+    default: "LastBirr — Expense tracker & daily budget",
     template: "%s · LastBirr",
   },
   description:
-    "A calmer way to manage everyday money. Plan essentials and know what you can spend today.",
+    "Track income and expenses in Ethiopian birr, plan for bills and savings, and see what is left to spend today. Available in English and Amharic.",
 };
 
 export default async function RootLayout({

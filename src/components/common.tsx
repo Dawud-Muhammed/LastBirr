@@ -72,11 +72,9 @@ export function PageHeading({
   description: string;
   children?: React.ReactNode;
 }) {
-  const t = useTranslations();
   return (
     <div className="page-heading">
       <div>
-        <p className="eyebrow">{t("tagline")}</p>
         <h1>{title}</h1>
         <p className="muted">{description}</p>
       </div>

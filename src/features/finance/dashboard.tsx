@@ -46,12 +46,17 @@ export function Dashboard({ data }: { data: FinanceData }) {
           </div>
           <h2>{t("todayRemaining")}</h2>
           <div className="daily-amount">{money(p.remainingToday)}</div>
-          <p className="daily-summary">
-            {t("dailySummary", {
-              allocation: money(p.allocation),
-              spent: money(p.spentToday),
-            })}
-          </p>
+          <p className="daily-context">{t("dailyBudgetHint")}</p>
+          <dl className="today-totals">
+            <div>
+              <dt>{t("allocation")}</dt>
+              <dd>{money(p.allocation)}</dd>
+            </div>
+            <div>
+              <dt>{t("spentToday")}</dt>
+              <dd>{money(p.spentToday)}</dd>
+            </div>
+          </dl>
           <div
             className="budget-progress"
             role="progressbar"
@@ -71,6 +76,20 @@ export function Dashboard({ data }: { data: FinanceData }) {
           <h2>{t("balance")}</h2>
           <strong className="balance-amount">{money(p.balance)}</strong>
           <p className="muted">{t("balanceExplained")}</p>
+          <dl className="reserved-totals">
+            <div>
+              <dt>{t("essentials")}</dt>
+              <dd>{money(p.essentials)}</dd>
+            </div>
+            <div>
+              <dt>{t("savings")}</dt>
+              <dd>{money(p.savings)}</dd>
+            </div>
+            <div>
+              <dt>{t("spendable")}</dt>
+              <dd>{money(p.spendable)}</dd>
+            </div>
+          </dl>
           <div className="key-value">
             <span>{t("planningEnd")}</span>
             <strong>
@@ -117,7 +136,6 @@ export function Dashboard({ data }: { data: FinanceData }) {
           <div className="breakdown-explanation">
             <p>{t("calculationText")}</p>
             <p>{t("dailyGuideExplained")}</p>
-            <p>{t("allocationNote")}</p>
             <p>{t("todayCalculation")}</p>
           </div>
         </div>
@@ -137,6 +155,7 @@ export function Dashboard({ data }: { data: FinanceData }) {
             <h2>{t("recentTransactions")}</h2>
             <TextLink href="/transactions">{t("viewAll")}</TextLink>
           </div>
+          <p className="section-description">{t("recentActivityHint")}</p>
           {data.transactions.length ? (
             <TransactionList
               compact
@@ -155,6 +174,7 @@ export function Dashboard({ data }: { data: FinanceData }) {
             <h2>{t("upcoming")}</h2>
             <TextLink href="/plan">{t("plan")}</TextLink>
           </div>
+          <p className="section-description">{t("upcomingBillsHint")}</p>
           {upcoming.length ? (
             upcoming.map((c) => (
               <div className="commitment-preview" key={c.id}>
@@ -164,7 +184,13 @@ export function Dashboard({ data }: { data: FinanceData }) {
                 <div>
                   <strong>{c.title}</strong>
                   <small>
-                    {c.due_on ? <DateText value={c.due_on} /> : t("unpaid")}
+                    {c.due_on ? (
+                      <>
+                        {t("dueLabel")} <DateText value={c.due_on} />
+                      </>
+                    ) : (
+                      t("noDueDate")
+                    )}
                   </small>
                 </div>
                 <strong>{money(c.amount)}</strong>
@@ -190,6 +216,29 @@ export function Dashboard({ data }: { data: FinanceData }) {
           </div>
         </section>
       </div>
+      <details className="form-disclosure account-help">
+        <summary>
+          <span>{t("newMonthHelp")}</span>
+          <ChevronDown size={18} />
+        </summary>
+        <div className="account-help-content">
+          <ol>
+            <li>
+              <strong>{t("incomeHelpTitle")}</strong>
+              <p>{t("incomeHelpText")}</p>
+            </li>
+            <li>
+              <strong>{t("periodHelpTitle")}</strong>
+              <p>{t("periodHelpText")}</p>
+            </li>
+            <li>
+              <strong>{t("billsHelpTitle")}</strong>
+              <p>{t("billsHelpText")}</p>
+            </li>
+          </ol>
+          <TextLink href="/plan">{t("openMoneyPlan")}</TextLink>
+        </div>
+      </details>
     </>
   );
 }

@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { getFinanceData, requireUser } from "@/lib/data";
 import { Settings } from "@/features/settings";
 export default async function Page() {
@@ -15,4 +16,9 @@ export default async function Page() {
       contactAvailable={!contact.error}
     />
   );
+}
+
+export async function generateMetadata() {
+  const t = await getTranslations();
+  return { title: t("settings") };
 }

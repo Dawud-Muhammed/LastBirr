@@ -1,3 +1,4 @@
+import { getTranslations } from "next-intl/server";
 import { redirect } from "next/navigation";
 import { requireUser } from "@/lib/data";
 import { Onboarding } from "@/features/finance/onboarding";
@@ -20,4 +21,9 @@ export default async function Page() {
       }
     />
   );
+}
+
+export async function generateMetadata() {
+  const t = await getTranslations();
+  return { title: t("welcome") };
 }

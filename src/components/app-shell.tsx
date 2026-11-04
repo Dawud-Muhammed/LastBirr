@@ -82,7 +82,7 @@ export function AppShell({
       </a>
       <aside className="sidebar">
         <Brand />
-        <div className="sidebar-label">{t("tagline")}</div>
+        <div className="sidebar-label">{t("yourAccount")}</div>
         <nav>
           {links.map(({ key, href, icon: Icon }) => (
             <Link
@@ -100,7 +100,7 @@ export function AppShell({
         <div className="sidebar-bottom">
           <div className="sidebar-note">
             <Sprout size={25} />
-            <p>{t("privacyShort")}</p>
+            <p>{t("manualRecords")}</p>
           </div>
           <SignOut />
           <div className="user-chip">
@@ -128,7 +128,7 @@ export function AppShell({
         </main>
         <footer className="app-footer">
           <Sprout size={14} />
-          {t("tagline")}
+          {t("accountFooter")}
         </footer>
       </div>
       <nav className="bottom-nav">
