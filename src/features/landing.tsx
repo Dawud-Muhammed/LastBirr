@@ -6,10 +6,10 @@ import {
   Check,
   ShieldCheck,
   Wallet,
-  CalendarDays,
   Sprout,
 } from "lucide-react";
 import { Brand, Preferences } from "@/components/common";
+import { BudgetExample } from "./budget-example";
 export default async function Landing() {
   const t = await getTranslations();
   return (
@@ -30,10 +30,7 @@ export default async function Landing() {
       <main id="main-content">
         <section className="hero">
           <div className="hero-copy">
-            <p className="eyebrow">
-              <span className="live-dot" />
-              {t("heroEyebrow")}
-            </p>
+            <p className="eyebrow">{t("heroEyebrow")}</p>
             <h1>{t("heroTitle")}</h1>
             <p className="hero-description">{t("heroText")}</p>
             <div className="hero-actions">
@@ -41,8 +38,8 @@ export default async function Landing() {
                 {t("getStarted")}
                 <ArrowRight size={18} />
               </Link>
-              <a className="text-link" href="#how-it-works">
-                {t("howWorks")}
+              <a className="text-link" href="#budget-example">
+                {t("tryExample")}
                 <ArrowUpRight size={16} />
               </a>
             </div>
@@ -51,59 +48,11 @@ export default async function Landing() {
               {t("freeStart")}
             </p>
           </div>
-          <div className="hero-visual">
-            <div className="example-heading">
-              <span className="tiny-squares">▧</span>
-              {t("example")}
-            </div>
-            <div className="example-budget">
-              <div className="example-top">
-                <span className="mini-pill">
-                  <span className="live-dot" />
-                  {t("today")}
-                </span>
-                <Sprout size={24} />
-              </div>
-              <p>{t("todayQuestion")}</p>
-              <div className="example-amount">
-                100<span>ETB</span>
-              </div>
-              <div className="example-rule" />
-              <div className="example-days">
-                <CalendarDays size={17} />
-                {t("exampleDays")}
-              </div>
-            </div>
-            <div className="example-stats">
-              <div>
-                <span>{t("balance")}</span>
-                <strong>
-                  1,500 <small>ETB</small>
-                </strong>
-              </div>
-              <div>
-                <span>{t("essentials")}</span>
-                <strong>
-                  400 <small>ETB</small>
-                </strong>
-              </div>
-              <div>
-                <span>{t("savings")}</span>
-                <strong>
-                  100 <small>ETB</small>
-                </strong>
-              </div>
-            </div>
-            <p className="example-footnote">{t("exampleNote")}</p>
-            <div className="floating-note">
-              <ShieldCheck size={20} />
-              {t("privacyShort")}
-            </div>
-          </div>
+          <BudgetExample />
         </section>
         <section className="how-section" id="how-it-works">
           <div className="section-heading">
-            <p className="eyebrow">LASTBIRR / 01</p>
+            <p className="eyebrow">{t("howWorks")}</p>
             <h2>{t("builtFor")}</h2>
           </div>
           <div className="steps-grid">

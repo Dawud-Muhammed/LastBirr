@@ -1,14 +1,6 @@
 "use client";
 import { useLocale, useTranslations } from "next-intl";
-import {
-  CalendarDays,
-  ShieldCheck,
-  Wallet,
-  PiggyBank,
-  Info,
-  ArrowUpRight,
-  Sparkles,
-} from "lucide-react";
+import { CalendarDays, Info, ArrowUpRight, ChevronDown } from "lucide-react";
 import type { FinanceData } from "@/lib/types";
 import { calculatePlan, formatMoney } from "@/lib/finance";
 import {
@@ -45,31 +37,21 @@ export function Dashboard({ data }: { data: FinanceData }) {
     <>
       <PageHeading title={t("hello")} description={t("dashboardIntro")}>
         <TransactionButton kind="income" openedOn={data.wallet.opened_on} />
-        <TransactionButton openedOn={data.wallet.opened_on} />
       </PageHeading>
-      <div className="dashboard-top">
+      <div className="dashboard-top dashboard-focused">
         <section className="daily-card">
           <div className="daily-card-top">
-            <span className="mini-pill">
-              <span className="live-dot" />
-              {t("today")}
-            </span>
+            <span>{t("today")}</span>
             <DateText value={data.today} />
           </div>
-          <h2>{t("todayQuestion")}</h2>
+          <h2>{t("todayRemaining")}</h2>
           <div className="daily-amount">{money(p.remainingToday)}</div>
-          <p className="daily-label">{t("todayRemaining")}</p>
-          <div className="daily-divider" />
-          <div className="daily-substats">
-            <div>
-              <span>{t("allocation")}</span>
-              <strong>{money(p.allocation)}</strong>
-            </div>
-            <div>
-              <span>{t("spentToday")}</span>
-              <strong>{money(p.spentToday)}</strong>
-            </div>
-          </div>
+          <p className="daily-summary">
+            {t("dailySummary", {
+              allocation: money(p.allocation),
+              spent: money(p.spentToday),
+            })}
+          </p>
           <div
             className="budget-progress"
             role="progressbar"
@@ -80,17 +62,15 @@ export function Dashboard({ data }: { data: FinanceData }) {
           >
             <span style={{ width: `${progress}%` }} />
           </div>
+          <div className="daily-action">
+            <TransactionButton openedOn={data.wallet.opened_on} />
+          </div>
           <p className="daily-footnote">{t("guideNote")}</p>
         </section>
-        <section className="panel period-card">
-          <div className="panel-heading">
-            <h2>{t("currentPlan")}</h2>
-            <CalendarDays size={19} />
-          </div>
-          <div className="days-number">
-            {Math.max(0, p.days ?? 0)}
-            <span>{t("daysLeft")}</span>
-          </div>
+        <section className="panel balance-summary">
+          <h2>{t("balance")}</h2>
+          <strong className="balance-amount">{money(p.balance)}</strong>
+          <p className="muted">{t("balanceExplained")}</p>
           <div className="key-value">
             <span>{t("planningEnd")}</span>
             <strong>
@@ -98,28 +78,11 @@ export function Dashboard({ data }: { data: FinanceData }) {
             </strong>
           </div>
           <div className="key-value">
-            <span>{t("dailyGuide")}</span>
-            <strong>{money(p.dailyGuide)}</strong>
+            <span>{t("daysLeft")}</span>
+            <strong>{Math.max(0, p.days ?? 0)}</strong>
           </div>
-          <p className="muted small">{t("expectedOnly")}</p>
           <TextLink href="/plan">{t("updatePlan")}</TextLink>
         </section>
-      </div>
-      <div className="stats-grid">
-        {[
-          { key: "balance", value: p.balance, icon: Wallet },
-          { key: "essentials", value: p.essentials, icon: ShieldCheck },
-          { key: "savings", value: p.savings, icon: PiggyBank },
-          { key: "spendable", value: p.spendable, icon: Sparkles },
-        ].map(({ key, value, icon: Icon }) => (
-          <section className="stat-card" key={key}>
-            <div>
-              <span>{t(key)}</span>
-              <Icon size={18} strokeWidth={1.5} />
-            </div>
-            <strong>{money(value)}</strong>
-          </section>
-        ))}
       </div>
       {p.warnings.length > 0 && (
         <div className="warnings" role="status">
@@ -130,6 +93,43 @@ export function Dashboard({ data }: { data: FinanceData }) {
             </div>
           ))}
         </div>
+      )}
+      <details className="budget-breakdown form-disclosure">
+        <summary>
+          <span>{t("calculation")}</span>
+          <ChevronDown size={18} />
+        </summary>
+        <div className="breakdown-content">
+          <dl className="breakdown-values">
+            {[
+              { key: "balance", value: p.balance },
+              { key: "essentials", value: p.essentials },
+              { key: "savings", value: p.savings },
+              { key: "spendable", value: p.spendable },
+              { key: "dailyGuide", value: p.dailyGuide },
+            ].map(({ key, value }) => (
+              <div key={key}>
+                <dt>{t(key)}</dt>
+                <dd>{money(value)}</dd>
+              </div>
+            ))}
+          </dl>
+          <div className="breakdown-explanation">
+            <p>{t("calculationText")}</p>
+            <p>{t("dailyGuideExplained")}</p>
+            <p>{t("allocationNote")}</p>
+            <p>{t("todayCalculation")}</p>
+          </div>
+        </div>
+      </details>
+      {!data.transactions.length && (
+        <section className="first-entry">
+          <div>
+            <h2>{t("firstExpenseTitle")}</h2>
+            <p>{t("firstExpenseText")}</p>
+          </div>
+          <TransactionButton openedOn={data.wallet.opened_on} />
+        </section>
       )}
       <div className="dashboard-bottom">
         <section className="panel">
@@ -157,9 +157,9 @@ export function Dashboard({ data }: { data: FinanceData }) {
           </div>
           {upcoming.length ? (
             upcoming.map((c) => (
-              <div key={c.id} className="commitment-preview">
+              <div className="commitment-preview" key={c.id}>
                 <span className="commitment-icon">
-                  <ShieldCheck size={18} />
+                  <CalendarDays size={18} />
                 </span>
                 <div>
                   <strong>{c.title}</strong>
@@ -190,21 +190,6 @@ export function Dashboard({ data }: { data: FinanceData }) {
           </div>
         </section>
       </div>
-      <details className="calculation-details">
-        <summary>
-          <Info size={17} />
-          {t("calculation")}
-        </summary>
-        <div>
-          <p>{t("calculationText")}</p>
-          <p className="formula">
-            {money(p.balance)} − {money(p.essentials)} − {money(p.savings)} →{" "}
-            {money(p.spendable)}
-          </p>
-          <p>{t("allocationNote")}</p>
-          <p>{t("todayCalculation")}</p>
-        </div>
-      </details>
     </>
   );
 }

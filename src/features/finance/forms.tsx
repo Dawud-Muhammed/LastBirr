@@ -5,7 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Plus, Pencil, X } from "lucide-react";
+import { Plus, Pencil, X, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -33,7 +33,12 @@ export function useMutation() {
   const lock = useRef(false);
   const [pending, start] = useTransition();
   const [error, setError] = useState("");
-  function run(operation: string, input: unknown, done?: () => void) {
+  function run(
+    operation: string,
+    input: unknown,
+    done?: () => void,
+    successMessage?: string,
+  ) {
     if (lock.current) return;
     lock.current = true;
     setError("");
@@ -45,7 +50,8 @@ export function useMutation() {
           toast.error(t(result.error || "saveFailed"));
         } else {
           toast.success(
-            t(operation.startsWith("delete") ? "deleted" : "saved"),
+            successMessage ||
+              t(operation.startsWith("delete") ? "deleted" : "saved"),
           );
           done?.();
         }
@@ -210,6 +216,7 @@ function TransactionEditor({
 }) {
   const t = useTranslations();
   const { run, pending, error } = useMutation();
+  const [detailsOpen, setDetailsOpen] = useState(!!entry);
   const {
     register,
     handleSubmit,
@@ -223,70 +230,148 @@ function TransactionEditor({
       id,
       kind: entry?.kind || kind,
       amount: entry ? moneyInput(entry.amount) : "",
-      category: entry?.category || (kind === "income" ? "allowance" : "food"),
+      category: entry?.category || (kind === "income" ? "work" : "food"),
       note: entry?.note || "",
       occurred_on: entry?.occurred_on || todayInAddis(),
     },
   });
   const selectedKind = useWatch({ control, name: "kind" });
+  const selectedCategory = useWatch({ control, name: "category" });
+  const selectedDate = useWatch({ control, name: "occurred_on" });
   return (
     <Modal
-      title={t(entry ? "editTransaction" : "addTransaction")}
+      title={t(
+        entry
+          ? "editTransaction"
+          : selectedKind === "expense"
+            ? "quickExpense"
+            : "quickIncome",
+      )}
       close={close}
       pending={pending}
     >
       <form
         className="form-stack"
         noValidate
-        onSubmit={handleSubmit((v) => run("transaction", v, close))}
+        onSubmit={handleSubmit(
+          (v) =>
+            run(
+              "transaction",
+              v,
+              close,
+              t(
+                entry
+                  ? "transactionUpdated"
+                  : v.kind === "expense"
+                    ? "expenseRecorded"
+                    : "incomeRecorded",
+              ),
+            ),
+          (invalid) => {
+            if (invalid.occurred_on || invalid.note) setDetailsOpen(true);
+          },
+        )}
       >
-        <Field label={t("type")} error={errors.kind?.message}>
-          <select
-            {...register("kind")}
-            onChange={(e) => {
-              setValue("kind", e.target.value as "expense" | "income");
-              setValue(
-                "category",
-                e.target.value === "income" ? "allowance" : "food",
-              );
-            }}
-          >
-            <option value="expense">{t("expense")}</option>
-            <option value="income">{t("income")}</option>
-          </select>
-        </Field>
-        <Field label={t("amount")} error={errors.amount?.message}>
-          <Input
-            autoFocus
-            inputMode="decimal"
-            placeholder="0.00"
-            {...register("amount")}
-            aria-invalid={!!errors.amount}
-          />
-        </Field>
-        <Field label={t("category")} error={errors.category?.message}>
-          <select {...register("category")}>
-            {(selectedKind === "expense"
-              ? expenseCategories
-              : incomeCategories
-            ).map((c) => (
-              <option key={c} value={c}>
-                {t(`categories.${c}`)}
-              </option>
+        <fieldset className="form-stack entry-fields" disabled={pending}>
+          <div className="transaction-kind" role="group" aria-label={t("type")}>
+            {(["expense", "income"] as const).map((value) => (
+              <button
+                type="button"
+                key={value}
+                aria-pressed={selectedKind === value}
+                disabled={pending}
+                onClick={() => {
+                  setValue("kind", value, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                  setValue("category", value === "income" ? "work" : "food", {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  });
+                }}
+              >
+                {t(value)}
+              </button>
             ))}
-          </select>
-        </Field>
-        <Field label={t("date")} error={errors.occurred_on?.message}>
-          <Input
-            type="date"
-            min={openedOn}
-            max={todayInAddis()}
-            {...register("occurred_on")}
-          />
-        </Field>
-        <Field label={t("note")} error={errors.note?.message}>
-          <Input maxLength={240} {...register("note")} />
-        </Field>
+          </div>
+          <div className="amount-entry">
+            <Field label={t("amount")} error={errors.amount?.message}>
+              <Input
+                autoFocus
+                inputMode="decimal"
+                placeholder="0.00"
+                {...register("amount")}
+                aria-invalid={!!errors.amount}
+              />
+            </Field>
+          </div>
+          <div
+            className="category-shortcuts"
+            role="group"
+            aria-label={t("quickCategories")}
+          >
+            {(selectedKind === "expense"
+              ? ["food", "transport", "data", "housing"]
+              : [...incomeCategories]
+            ).map((category) => (
+              <button
+                type="button"
+                key={category}
+                aria-pressed={selectedCategory === category}
+                disabled={pending}
+                onClick={() =>
+                  setValue("category", category, {
+                    shouldDirty: true,
+                    shouldValidate: true,
+                  })
+                }
+              >
+                {t(`categories.${category}`)}
+              </button>
+            ))}
+          </div>
+          <Field label={t("category")} error={errors.category?.message}>
+            <select {...register("category")} value={selectedCategory}>
+              {(selectedKind === "expense"
+                ? expenseCategories
+                : incomeCategories
+              ).map((c) => (
+                <option key={c} value={c}>
+                  {t(`categories.${c}`)}
+                </option>
+              ))}
+            </select>
+          </Field>
+          <details
+            className="form-disclosure"
+            open={detailsOpen}
+            onToggle={(event) => setDetailsOpen(event.currentTarget.open)}
+          >
+            <summary>
+              <span>
+                {t("transactionDetails")}
+                <small>
+                  {selectedDate === todayInAddis() ? t("today") : selectedDate}
+                </small>
+              </span>
+              <ChevronDown size={18} />
+            </summary>
+            <div className="form-stack disclosure-body">
+              <Field label={t("date")} error={errors.occurred_on?.message}>
+                <Input
+                  type="date"
+                  min={openedOn}
+                  max={todayInAddis()}
+                  {...register("occurred_on")}
+                />
+              </Field>
+              <Field label={t("note")} error={errors.note?.message}>
+                <Input maxLength={240} {...register("note")} />
+              </Field>
+            </div>
+          </details>
+        </fieldset>
         {error && (
           <p className="field-error" role="alert">
             {t(error)}
@@ -302,7 +387,15 @@ function TransactionEditor({
             {t("cancel")}
           </Button>
           <Button type="submit" disabled={pending}>
-            {t(pending ? "saving" : "save")}
+            {t(
+              pending
+                ? "saving"
+                : entry
+                  ? "save"
+                  : selectedKind === "expense"
+                    ? "quickExpense"
+                    : "quickIncome",
+            )}
           </Button>
         </div>
       </form>

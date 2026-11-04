@@ -5,8 +5,9 @@ import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowRight, ShieldCheck } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { onboardingSchema } from "@/lib/validation";
+import { nameSchema } from "@/lib/identity";
 import { addDays, todayInAddis } from "@/lib/finance";
 import { Brand, Preferences, Field } from "@/components/common";
 import { Input } from "@/components/ui/input";
@@ -16,6 +17,8 @@ export function Onboarding({ name }: { name: string }) {
   const t = useTranslations();
   const router = useRouter();
   const [error, setError] = useState("");
+  const [reservesOpen, setReservesOpen] = useState(false);
+  const [nameOpen, setNameOpen] = useState(!nameSchema.safeParse(name).success);
   const {
     register,
     handleSubmit,
@@ -28,7 +31,7 @@ export function Onboarding({ name }: { name: string }) {
       balance: "",
       end_on: addDays(todayInAddis(), 10),
       savings: "0",
-      horizon_type: "allowance",
+      horizon_type: "custom",
       commitment: "0",
       commitmentTitle: "",
     },
@@ -39,32 +42,104 @@ export function Onboarding({ name }: { name: string }) {
         <Brand />
         <Preferences />
       </header>
-      <main className="onboarding" id="main-content">
+      <main className="onboarding onboarding-simple" id="main-content">
         <div className="onboarding-heading">
-          <span className="eyebrow">{t("onboardStep")}</span>
+          <p className="eyebrow">{t("onboardStep")}</p>
           <h1>{t("welcome")}</h1>
-          <p className="muted">{t("onboardIntro")}</p>
+          <p>{t("onboardIntro")}</p>
         </div>
         <form
           className="panel form-stack"
           noValidate
-          onSubmit={handleSubmit(async (v) => {
-            setError("");
-            try {
-              const r = await onboard(v);
-              if (!r.ok) setError(r.error || "saveFailed");
-              else {
-                router.push("/dashboard");
-                router.refresh();
+          onSubmit={handleSubmit(
+            async (v) => {
+              setError("");
+              try {
+                const result = await onboard(v);
+                if (!result.ok) setError(result.error || "saveFailed");
+                else {
+                  router.push("/dashboard");
+                  router.refresh();
+                }
+              } catch {
+                setError("saveFailed");
               }
-            } catch {
-              setError("saveFailed");
-            }
-          })}
+            },
+            (invalid) => {
+              if (invalid.name) setNameOpen(true);
+              if (
+                invalid.commitment ||
+                invalid.commitmentTitle ||
+                invalid.savings
+              )
+                setReservesOpen(true);
+            },
+          )}
         >
-          <div className="form-section">
-            <span className="step-number">01</span>
-            <div className="form-stack">
+          <Field
+            label={t("openingQuestion")}
+            hint={t("balanceHint")}
+            error={errors.balance?.message}
+          >
+            <Input
+              autoFocus
+              inputMode="decimal"
+              placeholder="1500.00"
+              {...register("balance")}
+            />
+          </Field>
+          <Field
+            label={t("endQuestion")}
+            hint={t("endQuestionHint")}
+            error={errors.end_on?.message}
+          >
+            <Input type="date" min={todayInAddis()} {...register("end_on")} />
+          </Field>
+          <details
+            className="form-disclosure"
+            open={reservesOpen}
+            onToggle={(event) => setReservesOpen(event.currentTarget.open)}
+          >
+            <summary>
+              <span>
+                {t("optionalReserves")}
+                <small>{t("optionalReservesHint")}</small>
+              </span>
+              <ChevronDown size={18} />
+            </summary>
+            <div className="form-stack disclosure-body">
+              <Field
+                label={t("essentialLabel")}
+                error={errors.commitment?.message}
+                hint={t("essentialHint")}
+              >
+                <Input inputMode="decimal" {...register("commitment")} />
+              </Field>
+              <Field
+                label={t("essentialName")}
+                error={errors.commitmentTitle?.message}
+              >
+                <Input maxLength={100} {...register("commitmentTitle")} />
+              </Field>
+              <Field
+                label={t("savingsLabel")}
+                error={errors.savings?.message}
+                hint={t("savingsHint")}
+              >
+                <Input inputMode="decimal" {...register("savings")} />
+              </Field>
+            </div>
+          </details>
+          <details
+            className="form-disclosure profile-disclosure"
+            open={nameOpen}
+            onToggle={(event) => setNameOpen(event.currentTarget.open)}
+          >
+            <summary>
+              <span>{t("profileName")}</span>
+              <ChevronDown size={18} />
+            </summary>
+            <div className="disclosure-body">
               <Field label={t("name")} error={errors.name?.message}>
                 <Input
                   autoComplete="name"
@@ -72,64 +147,8 @@ export function Onboarding({ name }: { name: string }) {
                   {...register("name")}
                 />
               </Field>
-              <Field
-                label={t("openingBalance")}
-                hint={t("balanceHint")}
-                error={errors.balance?.message}
-              >
-                <Input
-                  inputMode="decimal"
-                  placeholder="1500.00"
-                  {...register("balance")}
-                />
-              </Field>
             </div>
-          </div>
-          <div className="form-section">
-            <span className="step-number">02</span>
-            <div className="form-grid">
-              <Field label={t("horizon")} error={errors.horizon_type?.message}>
-                <select {...register("horizon_type")}>
-                  <option value="allowance">{t("allowance")}</option>
-                  <option value="custom">{t("custom")}</option>
-                </select>
-              </Field>
-              <Field label={t("endDate")} error={errors.end_on?.message}>
-                <Input
-                  type="date"
-                  min={todayInAddis()}
-                  {...register("end_on")}
-                />
-              </Field>
-            </div>
-          </div>
-          <div className="form-section">
-            <span className="step-number">03</span>
-            <div className="form-stack">
-              <div className="form-grid">
-                <Field
-                  label={t("essentialLabel")}
-                  error={errors.commitment?.message}
-                >
-                  <Input inputMode="decimal" {...register("commitment")} />
-                </Field>
-                <Field
-                  label={t("savingsLabel")}
-                  error={errors.savings?.message}
-                >
-                  <Input inputMode="decimal" {...register("savings")} />
-                </Field>
-              </div>
-              <Field
-                label={t("essentialName")}
-                hint={t("essentialHint")}
-                error={errors.commitmentTitle?.message}
-              >
-                <Input maxLength={100} {...register("commitmentTitle")} />
-              </Field>
-              <p className="muted small">{t("savingsHint")}</p>
-            </div>
-          </div>
+          </details>
           {error && (
             <p role="alert" className="notice notice-error">
               {t(error)}
@@ -139,10 +158,7 @@ export function Onboarding({ name }: { name: string }) {
             {t(isSubmitting ? "saving" : "startPlan")}
             <ArrowRight size={17} />
           </Button>
-          <p className="microcopy">
-            <ShieldCheck size={18} />
-            {t("onboardFooter")}
-          </p>
+          <p className="muted small">{t("onboardFooter")}</p>
         </form>
       </main>
     </div>
