@@ -3,17 +3,18 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTheme } from "next-themes";
 import { restorePreferences } from "@/features/finance/actions";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, ShieldCheck } from "lucide-react";
+import { authSchema, authErrorKey, type AuthMode } from "@/lib/identity";
+import { signUp } from "./actions";
 import { createClient } from "@/lib/supabase/browser";
 import { Brand, Preferences, Field } from "@/components/common";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-export type AuthMode = "login" | "register" | "forgot" | "reset";
 export function AuthForm({
   mode,
   invalidLink = false,
@@ -26,30 +27,27 @@ export function AuthForm({
   const { setTheme } = useTheme();
   const [notice, setNotice] = useState("");
   const [error, setError] = useState(invalidLink ? "invalidLink" : "");
-  const schema = z
-    .object({
-      name:
-        mode === "register"
-          ? z.string().trim().min(1, "required").max(80, "tooLong")
-          : z.string(),
-      email: mode !== "reset" ? z.email("invalidEmail") : z.string(),
-      password:
-        mode !== "forgot" ? z.string().min(8, "shortPassword") : z.string(),
-      confirmPassword: z.string(),
-    })
-    .refine((v) => mode !== "reset" || v.password === v.confirmPassword, {
-      message: "passwordMismatch",
-      path: ["confirmPassword"],
-    });
+  const [showPassword, setShowPassword] = useState(false);
+  const submitting = useRef(false);
+  const schema = authSchema(mode);
   const {
     register,
     handleSubmit,
     formState: { errors, isSubmitting },
   } = useForm<z.infer<typeof schema>>({
     resolver: zodResolver(schema),
-    defaultValues: { name: "", email: "", password: "", confirmPassword: "" },
+    mode: "onTouched",
+    defaultValues: {
+      name: "",
+      phone: "",
+      email: "",
+      password: "",
+      confirmPassword: "",
+    },
   });
-  const submit = handleSubmit(async (v) => {
+  const submit = async (v: z.infer<typeof schema>) => {
+    if (submitting.current) return;
+    submitting.current = true;
     setError("");
     setNotice("");
     try {
@@ -57,7 +55,7 @@ export function AuthForm({
       const origin = window.location.origin;
       if (mode === "login") {
         const r = await db.auth.signInWithPassword({
-          email: v.email,
+          email: v.email.trim().toLowerCase(),
           password: v.password,
         });
         if (r.error) throw r.error;
@@ -67,24 +65,19 @@ export function AuthForm({
         router.refresh();
       }
       if (mode === "register") {
-        const r = await db.auth.signUp({
-          email: v.email,
-          password: v.password,
-          options: {
-            data: { name: v.name },
-            emailRedirectTo: `${origin}/auth/callback`,
-          },
-        });
-        if (r.error) throw r.error;
-        if (r.data.session) {
+        const r = await signUp(v);
+        if (r.ok) {
           router.replace("/onboarding");
           router.refresh();
-        } else setNotice("confirmEmail");
+        } else setError(r.error || "authRequestFailed");
       }
       if (mode === "forgot") {
-        const r = await db.auth.resetPasswordForEmail(v.email, {
-          redirectTo: `${origin}/auth/callback?next=/reset-password`,
-        });
+        const r = await db.auth.resetPasswordForEmail(
+          v.email.trim().toLowerCase(),
+          {
+            redirectTo: `${origin}/auth/callback?next=/reset-password`,
+          },
+        );
         if (r.error) throw r.error;
         setNotice("checkEmail");
       }
@@ -93,12 +86,16 @@ export function AuthForm({
         if (r.error) throw r.error;
         setNotice("passwordSaved");
       }
-    } catch {
-      setError(mode === "login" ? "authFailed" : "authRequestFailed");
+    } catch (error) {
+      setError(
+        authErrorKey(error && typeof error === "object" ? error : {}, mode),
+      );
+    } finally {
+      submitting.current = false;
     }
-  });
+  };
   return (
-    <div className="auth-page">
+    <div className={`auth-page auth-${mode}`}>
       <header className="public-header">
         <Brand />
         <Preferences />
@@ -118,13 +115,37 @@ export function AuthForm({
         <section className="auth-card">
           <p className="eyebrow">LASTBIRR</p>
           <h2>{t(mode)}</h2>
-          <form onSubmit={submit} className="form-stack" noValidate>
+          {mode === "register" && (
+            <p className="auth-subtitle">{t("simpleSignup")}</p>
+          )}
+          <form
+            onSubmit={(event) => void handleSubmit(submit)(event)}
+            className="form-stack"
+            noValidate
+          >
             {mode === "register" && (
               <Field label={t("name")} error={errors.name?.message}>
                 <Input
                   autoComplete="name"
+                  maxLength={80}
                   {...register("name")}
                   aria-invalid={!!errors.name}
+                />
+              </Field>
+            )}
+            {mode === "register" && (
+              <Field
+                label={t("phone")}
+                hint={t("phoneHint")}
+                error={errors.phone?.message}
+              >
+                <Input
+                  type="tel"
+                  inputMode="tel"
+                  autoComplete="tel"
+                  placeholder="09… / 07… / +251…"
+                  maxLength={30}
+                  {...register("phone")}
                 />
               </Field>
             )}
@@ -133,6 +154,9 @@ export function AuthForm({
                 <Input
                   type="email"
                   autoComplete="email"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  maxLength={254}
                   {...register("email")}
                   aria-invalid={!!errors.email}
                 />
@@ -144,23 +168,38 @@ export function AuthForm({
                 error={errors.password?.message}
                 hint={mode !== "login" ? t("passwordHint") : undefined}
               >
-                <Input
-                  type="password"
-                  autoComplete={
-                    mode === "login" ? "current-password" : "new-password"
-                  }
-                  {...register("password")}
-                  aria-invalid={!!errors.password}
-                />
+                <div className="password-field">
+                  <Input
+                    type={showPassword ? "text" : "password"}
+                    maxLength={128}
+                    autoComplete={
+                      mode === "login" ? "current-password" : "new-password"
+                    }
+                    {...register("password")}
+                    aria-invalid={!!errors.password}
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    aria-label={t(
+                      showPassword ? "hidePassword" : "showPassword",
+                    )}
+                    aria-pressed={showPassword}
+                    onClick={() => setShowPassword((v) => !v)}
+                  >
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                </div>
               </Field>
             )}
-            {mode === "reset" && (
+            {(mode === "register" || mode === "reset") && (
               <Field
                 label={t("confirmPassword")}
                 error={errors.confirmPassword?.message}
               >
                 <Input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
+                  maxLength={128}
                   autoComplete="new-password"
                   {...register("confirmPassword")}
                 />
@@ -198,6 +237,12 @@ export function AuthForm({
               <ArrowRight size={16} />
             </Button>
           </form>
+          {mode === "register" && (
+            <p className="signup-assurance">
+              <ShieldCheck size={15} />
+              {t("signupAssurance")}
+            </p>
+          )}
           <p className="auth-switch">
             {mode === "login"
               ? t("noAccount")

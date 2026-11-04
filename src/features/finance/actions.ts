@@ -10,7 +10,9 @@ import {
   planSchema,
   profileSchema,
   transactionSchema,
+  contactSchema,
 } from "@/lib/validation";
+import { normalizeEthiopianPhone } from "@/lib/identity";
 export type ActionResult = { ok: boolean; error?: string };
 export async function mutate(
   operation: string,
@@ -22,6 +24,19 @@ export async function mutate(
       data: { user },
     } = await db.auth.getUser();
     if (!user) return { ok: false, error: "sessionExpired" };
+    if (operation === "contact") {
+      const v = contactSchema.parse(input);
+      const { error } = await db.rpc("update_contact_phone", {
+        p_phone: normalizeEthiopianPhone(v.phone),
+      });
+      if (error)
+        return {
+          ok: false,
+          error: error.code === "23505" ? "phoneTaken" : "saveFailed",
+        };
+      revalidatePath("/settings");
+      return { ok: true };
+    }
     let payload: Record<string, unknown>;
     if (operation === "transaction") {
       const v = transactionSchema.parse(input);

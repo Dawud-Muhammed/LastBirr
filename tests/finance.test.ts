@@ -207,7 +207,7 @@ test("UI schema rejects future income, invalid categories, zero amounts", () => 
 });
 test("onboarding validates exact amounts and a valid horizon", () => {
   const v = {
-    name: "Student",
+    name: "Dawit",
     balance: "1500",
     end_on: addDays(todayInAddis(), 10),
     savings: "100",

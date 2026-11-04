@@ -1,6 +1,13 @@
 import { z } from "zod";
 import { parseMoney, validDate, todayInAddis } from "./finance";
 import { expenseCategories, incomeCategories } from "./types";
+import { nameSchema, phoneSchema } from "./identity";
+const safeText = (max: number) =>
+  z
+    .string()
+    .trim()
+    .max(max, "tooLong")
+    .refine((v) => !/[\u0000-\u001f\u007f<>]/u.test(v), "invalidText");
 export const moneySchema = z.string().refine((v) => {
   try {
     parseMoney(v);
@@ -23,7 +30,7 @@ export const transactionSchema = z
     kind: z.enum(["income", "expense"]),
     amount: positiveMoney,
     category: z.string(),
-    note: z.string().trim().max(240, "tooLong"),
+    note: safeText(240),
     occurred_on: dateSchema.refine(
       (v) => v <= todayInAddis(),
       "futureTransaction",
@@ -42,20 +49,38 @@ export const planSchema = z.object({
   savings: moneySchema,
   horizon_type: z.enum(["allowance", "custom"]),
 });
-export const onboardingSchema = planSchema.extend({
-  name: z.string().trim().min(1, "required").max(80, "tooLong"),
-  balance: moneySchema,
-  commitment: moneySchema,
-  commitmentTitle: z.string().trim().max(100, "tooLong"),
-});
+export const onboardingSchema = planSchema
+  .extend({
+    name: nameSchema,
+    balance: moneySchema,
+    commitment: moneySchema,
+    commitmentTitle: safeText(100),
+  })
+  .refine(
+    (v) => {
+      try {
+        return parseMoney(v.commitment) === 0 || v.commitmentTitle.length >= 2;
+      } catch {
+        return true;
+      }
+    },
+    { message: "commitmentNameRequired", path: ["commitmentTitle"] },
+  );
 export const commitmentSchema = z.object({
   id: z.uuid(),
-  title: z.string().trim().min(1, "required").max(100, "tooLong"),
+  title: safeText(100).refine((v) => v.length >= 2, "required"),
   amount: positiveMoney,
   due_on: z.union([z.literal(""), dateSchema]),
 });
 export const profileSchema = z.object({
-  name: z.string().trim().min(1, "required").max(80, "tooLong"),
+  name: nameSchema,
   locale: z.enum(["en", "am"]),
   theme: z.enum(["system", "light", "dark"]),
 });
+export const contactSchema = z.object({ phone: phoneSchema });
+export function transactionSchemaForWallet(openedOn: string) {
+  return transactionSchema.refine((v) => v.occurred_on >= openedOn, {
+    message: "transactionDateRange",
+    path: ["occurred_on"],
+  });
+}

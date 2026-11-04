@@ -28,6 +28,7 @@ export function MoneyPlan({ data }: { data: FinanceData }) {
     formState: { errors },
   } = useForm<z.infer<typeof planSchema>>({
     resolver: zodResolver(planSchema),
+    mode: "onTouched",
     defaultValues: {
       end_on: data.plan.end_on,
       savings: moneyInput(data.plan.savings),
@@ -48,7 +49,7 @@ export function MoneyPlan({ data }: { data: FinanceData }) {
             noValidate
             onSubmit={handleSubmit((v) => run("plan", v))}
           >
-            <Field label={t("horizon")}>
+            <Field label={t("horizon")} error={errors.horizon_type?.message}>
               <select {...register("horizon_type")}>
                 <option value="allowance">{t("allowance")}</option>
                 <option value="custom">{t("custom")}</option>

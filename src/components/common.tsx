@@ -2,7 +2,16 @@
 import Link from "next/link";
 import { useLocale, useTranslations } from "next-intl";
 import { useTheme } from "next-themes";
-import { useTransition } from "react";
+import {
+  Children,
+  cloneElement,
+  isValidElement,
+  useId,
+  useTransition,
+  type ReactElement,
+  type HTMLAttributes,
+} from "react";
+import { Input } from "@/components/ui/input";
 import { ArrowUpRight, Sprout, SunMoon } from "lucide-react";
 import { setLocale, setAppearance } from "@/features/finance/actions";
 export function Brand() {
@@ -121,17 +130,46 @@ export function Field({
   children: React.ReactNode;
 }) {
   const t = useTranslations();
+  const id = useId();
+  const describe =
+    [hint ? `${id}-hint` : "", error ? `${id}-error` : ""]
+      .filter(Boolean)
+      .join(" ") || undefined;
+  // Attach accessible validation to both direct controls and password wrappers.
+  function annotate(nodes: React.ReactNode): React.ReactNode {
+    return Children.map(nodes, (node) => {
+      if (!isValidElement(node)) return node;
+      const element = node as ReactElement<HTMLAttributes<HTMLElement>>;
+      if (
+        element.type === Input ||
+        ["input", "select", "textarea"].includes(String(element.type))
+      ) {
+        return cloneElement(element, {
+          id,
+          "aria-invalid": !!error,
+          "aria-describedby": describe,
+        });
+      }
+      if (element.type === "div")
+        return cloneElement(element, {}, annotate(element.props.children));
+      return node;
+    });
+  }
   return (
-    <label className="field">
-      <span>{label}</span>
-      {children}
-      {hint && <small className="muted">{hint}</small>}
+    <div className={`field${error ? " field-invalid" : ""}`}>
+      <label htmlFor={id}>{label}</label>
+      {annotate(children)}
+      {hint && (
+        <small id={`${id}-hint`} className="muted">
+          {hint}
+        </small>
+      )}
       {error && (
-        <small className="field-error" role="alert">
+        <small id={`${id}-error`} className="field-error" role="alert">
           {t.has(error) ? t(error) : t("invalidForm")}
         </small>
       )}
-    </label>
+    </div>
   );
 }
 export function DateText({ value }: { value: string }) {

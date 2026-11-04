@@ -15,7 +15,11 @@ import {
   DialogDescription,
 } from "@/components/ui/dialog";
 import { Field } from "@/components/common";
-import { commitmentSchema, transactionSchema } from "@/lib/validation";
+import {
+  commitmentSchema,
+  transactionSchema,
+  transactionSchemaForWallet,
+} from "@/lib/validation";
 import { moneyInput, todayInAddis } from "@/lib/finance";
 import {
   expenseCategories,
@@ -213,7 +217,8 @@ function TransactionEditor({
     setValue,
     formState: { errors },
   } = useForm<z.infer<typeof transactionSchema>>({
-    resolver: zodResolver(transactionSchema),
+    resolver: zodResolver(transactionSchemaForWallet(openedOn)),
+    mode: "onTouched",
     defaultValues: {
       id,
       kind: entry?.kind || kind,
@@ -235,7 +240,7 @@ function TransactionEditor({
         noValidate
         onSubmit={handleSubmit((v) => run("transaction", v, close))}
       >
-        <Field label={t("type")}>
+        <Field label={t("type")} error={errors.kind?.message}>
           <select
             {...register("kind")}
             onChange={(e) => {
@@ -343,6 +348,7 @@ function CommitmentEditor({
     formState: { errors },
   } = useForm<z.infer<typeof commitmentSchema>>({
     resolver: zodResolver(commitmentSchema),
+    mode: "onTouched",
     defaultValues: {
       id,
       title: commitment?.title || "",

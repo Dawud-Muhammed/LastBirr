@@ -19,7 +19,7 @@
   --border: #dfe5dc;
   --input: #d9e0d7;
   --ring: #6b9870;
-  --radius: 0.75rem;
+  --radius: 1rem;
   --hero: #e9efdf;
   --green-deep: #183f30;
   --warning: #f7f0e1;
@@ -68,10 +68,10 @@
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
-  --radius-sm: 0.4rem;
-  --radius-md: 0.6rem;
-  --radius-lg: 0.8rem;
-  --radius-xl: 1rem;
+  --radius-sm: 0.6rem;
+  --radius-md: 0.75rem;
+  --radius-lg: 1rem;
+  --radius-xl: 1.25rem;
   --font-sans: "Segoe UI", "Noto Sans Ethiopic", Nyala, Arial, sans-serif;
 }
 * {
@@ -152,7 +152,7 @@ select {
   width: 100%;
   height: 42px;
   border: 1px solid var(--input);
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--card);
   padding: 0 12px;
   color: var(--foreground);
@@ -163,7 +163,7 @@ input[data-slot="input"] {
   background: var(--card);
   padding: 10px 12px;
   font-size: 14px;
-  border-radius: 8px;
+  border-radius: 12px;
 }
 input[type="date"] {
   color-scheme: light;
@@ -208,7 +208,7 @@ hr {
   gap: 12px;
   min-height: 44px;
   padding: 12px 20px;
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 13px;
   font-weight: 600;
   transition:
@@ -257,7 +257,7 @@ hr {
   color: var(--primary-foreground);
   width: 34px;
   height: 34px;
-  border-radius: 10px;
+  border-radius: 14px;
   margin-right: 9px;
 }
 .brand-dot {
@@ -424,7 +424,7 @@ hr {
 }
 .example-rule {
   height: 5px;
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--primary);
   opacity: 0.7;
 }
@@ -471,7 +471,7 @@ hr {
   bottom: -24px;
   right: -20px;
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: 13px;
   background: var(--card);
   padding: 13px 17px;
   display: flex;
@@ -627,8 +627,107 @@ hr {
 .auth-card {
   background: var(--card);
   border: 1px solid var(--border);
-  border-radius: 16px;
+  border-radius: 22px;
   padding: 32px;
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--primary) 7%, transparent);
+}
+.auth-register .auth-layout {
+  max-width: 1120px;
+  grid-template-columns: 1fr 1.15fr;
+  margin-block: 30px;
+  gap: 70px;
+}
+.auth-register .auth-card h2 {
+  margin-bottom: 10px;
+}
+.auth-subtitle {
+  color: var(--muted-foreground);
+  font-size: 13px;
+  margin-bottom: 24px;
+}
+.auth-register .form-stack {
+  gap: 15px;
+}
+.password-field {
+  position: relative;
+}
+.password-field input[data-slot="input"] {
+  width: 100%;
+  padding-right: 48px;
+}
+.password-toggle {
+  position: absolute;
+  right: 3px;
+  top: 2px;
+  width: 40px;
+  height: 39px;
+  display: grid;
+  place-items: center;
+  border-radius: 10px;
+  color: var(--muted-foreground);
+}
+.password-toggle:hover {
+  background: var(--secondary);
+  color: var(--primary);
+}
+.signup-assurance {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 22px;
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+.signup-assurance svg {
+  color: var(--primary);
+}
+.field-invalid input[data-slot="input"],
+.field-invalid select {
+  border-color: var(--destructive);
+}
+.brand,
+.brand-mark,
+.text-link svg,
+.button svg,
+[data-slot="button"],
+.sidebar nav a {
+  transition:
+    transform 180ms ease,
+    background-color 180ms ease,
+    color 180ms ease,
+    box-shadow 180ms ease;
+}
+@media (hover: hover) {
+  .brand:hover {
+    color: var(--primary);
+  }
+  .brand:hover .brand-mark {
+    transform: rotate(-7deg) scale(1.06);
+    box-shadow: 0 4px 12px color-mix(in srgb, var(--primary) 22%, transparent);
+  }
+  .button-primary:hover,
+  .form-submit[data-slot="button"]:hover:not(:disabled) {
+    box-shadow: 0 5px 16px color-mix(in srgb, var(--primary) 23%, transparent);
+    transform: translateY(-2px);
+  }
+  .button:hover svg,
+  .text-link:hover svg {
+    transform: translate(2px, -1px);
+  }
+  [data-slot="button"]:hover:not(:disabled) {
+    transform: translateY(-1px);
+  }
+  input[data-slot="input"]:hover:not(:focus):not([aria-invalid="true"]),
+  select:hover {
+    border-color: var(--ring);
+  }
+}
+@media (max-width: 760px) {
+  .auth-register .auth-layout {
+    grid-template-columns: 1fr;
+    margin-block: 15px;
+    gap: 0;
+  }
 }
 .auth-card h2 {
   font-size: 25px;
@@ -670,7 +769,7 @@ hr {
 }
 .notice {
   padding: 14px 16px;
-  border-radius: 8px;
+  border-radius: 12px;
   background: var(--secondary);
   font-size: 12px;
   line-height: 1.7;
@@ -781,7 +880,7 @@ hr {
   gap: 13px;
   padding: 12px 14px;
   color: var(--muted-foreground);
-  border-radius: 8px;
+  border-radius: 12px;
   font-size: 12px;
   font-weight: 500;
 }
@@ -807,7 +906,7 @@ hr {
 .sidebar-note {
   padding: 20px 15px;
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 14px;
   color: var(--primary);
   margin-bottom: 25px;
 }
@@ -1068,7 +1167,7 @@ hr {
 .stat-card {
   border: 1px solid var(--border);
   background: var(--card);
-  border-radius: 10px;
+  border-radius: 14px;
   padding: 19px 20px;
   min-width: 0;
 }
@@ -1103,7 +1202,7 @@ hr {
   padding: 12px 15px;
   background: var(--warning);
   color: var(--warning-text);
-  border-radius: 8px;
+  border-radius: 12px;
   align-items: flex-start;
 }
 .warning p {
@@ -1132,7 +1231,7 @@ hr {
   background: var(--muted);
   display: grid;
   place-items: center;
-  border-radius: 10px;
+  border-radius: 14px;
   color: var(--muted-foreground);
 }
 .transaction-icon.income {
@@ -1186,7 +1285,7 @@ hr {
 .commitment-icon {
   width: 34px;
   height: 34px;
-  border-radius: 9px;
+  border-radius: 13px;
   background: var(--secondary);
   color: var(--primary);
   display: grid;
@@ -1230,7 +1329,7 @@ hr {
 }
 .calculation-details {
   border: 1px solid var(--border);
-  border-radius: 10px;
+  border-radius: 14px;
   margin-top: 23px;
   background: var(--card);
   padding: 16px 20px;
@@ -1370,7 +1469,7 @@ hr {
 }
 .commitment-card {
   border: 1px solid var(--border);
-  border-radius: 9px;
+  border-radius: 13px;
   padding: 18px;
   margin-top: 13px;
 }
@@ -1465,7 +1564,7 @@ hr {
   gap: 9px;
   align-items: flex-start;
   background: var(--secondary);
-  border-radius: 8px;
+  border-radius: 12px;
   padding: 14px;
   margin-top: 20px;
   color: var(--secondary-foreground);
@@ -1977,7 +2076,7 @@ html[lang="am"] .hero h1 {
   .transaction-icon {
     width: 31px;
     height: 31px;
-    border-radius: 9px;
+    border-radius: 13px;
   }
   .transaction-amount {
     font-size: 12px;

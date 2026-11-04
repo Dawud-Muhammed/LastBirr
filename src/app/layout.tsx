@@ -11,7 +11,7 @@ export const metadata: Metadata = {
     template: "%s · LastBirr",
   },
   description:
-    "A calmer way to manage student money. Plan essentials and know what you can spend today.",
+    "A calmer way to manage everyday money. Plan essentials and know what you can spend today.",
 };
 
 export default async function RootLayout({
@@ -21,7 +21,7 @@ export default async function RootLayout({
 }) {
   const locale = await getLocale();
   return (
-    <html lang={locale} suppressHydrationWarning>
+    <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body>
         <Providers locale={locale} messages={await getMessages()}>
           {children}

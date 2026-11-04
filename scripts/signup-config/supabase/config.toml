@@ -1,0 +1,10 @@
+# A deliberately narrow config for the existing LastBirr project.
+# Always inspect `config diff` with this workdir before `config push`.
+project_id = "lastbirr-signup-settings"
+[auth]
+minimum_password_length = 8
+site_url = "https://last-birr.vercel.app/"
+# Keep the existing deployment URLs while adding the user's current domain.
+additional_redirect_urls = ["https://last-birr-dawud4.vercel.app/", "https://last-birr-dawud4.vercel.app/**", "https://last-*-birr-dawud4.vercel.app", "https://last-*-birr-dawud4.vercel.app/**", "https://last-birr.vercel.app/**"]
+[auth.email]
+enable_confirmations = false

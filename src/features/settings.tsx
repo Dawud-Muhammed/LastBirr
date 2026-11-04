@@ -6,7 +6,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { ShieldCheck, ArrowUpRight } from "lucide-react";
-import { profileSchema } from "@/lib/validation";
+import { profileSchema, contactSchema } from "@/lib/validation";
 import type { Profile } from "@/lib/types";
 import { Field, PageHeading } from "@/components/common";
 import { Button } from "@/components/ui/button";
@@ -16,9 +16,13 @@ import { useMutation } from "./finance/forms";
 export function Settings({
   profile,
   email,
+  phone,
+  contactAvailable,
 }: {
   profile: Profile;
   email: string;
+  phone: string;
+  contactAvailable: boolean;
 }) {
   const t = useTranslations();
   const { setTheme } = useTheme();
@@ -29,6 +33,7 @@ export function Settings({
     formState: { errors },
   } = useForm<z.infer<typeof profileSchema>>({
     resolver: zodResolver(profileSchema),
+    mode: "onTouched",
     defaultValues: {
       name: profile.name,
       locale: profile.locale,
@@ -48,7 +53,7 @@ export function Settings({
         >
           <h2>{t("profile")}</h2>
           <Field label={t("name")} error={errors.name?.message}>
-            <Input autoComplete="name" {...register("name")} />
+            <Input autoComplete="name" maxLength={80} {...register("name")} />
           </Field>
           <div className="field">
             <span>{t("accountEmail")}</span>
@@ -57,13 +62,13 @@ export function Settings({
           <hr />
           <h2>{t("preferences")}</h2>
           <div className="form-grid">
-            <Field label={t("language")}>
+            <Field label={t("language")} error={errors.locale?.message}>
               <select {...register("locale")}>
                 <option value="en">English</option>
                 <option value="am">አማርኛ</option>
               </select>
             </Field>
-            <Field label={t("theme")}>
+            <Field label={t("theme")} error={errors.theme?.message}>
               <select {...register("theme")}>
                 {["system", "light", "dark"].map((v) => (
                   <option key={v} value={v}>
@@ -94,18 +99,77 @@ export function Settings({
             {t(pending ? "saving" : "save")}
           </Button>
         </form>
-        <section className="panel security-panel">
-          <ShieldCheck size={30} />
-          <h2>{t("security")}</h2>
-          <p className="muted">{t("privacyText")}</p>
-          <Link className="button button-outline" href="/reset-password">
-            {t("changePassword")}
-            <ArrowUpRight size={16} />
-          </Link>
-          <hr />
-          <SignOut />
-        </section>
+        <div className="form-stack">
+          <ContactForm phone={phone} available={contactAvailable} />
+          <section className="panel security-panel">
+            <ShieldCheck size={30} />
+            <h2>{t("security")}</h2>
+            <p className="muted">{t("privacyText")}</p>
+            <Link className="button button-outline" href="/reset-password">
+              {t("changePassword")}
+              <ArrowUpRight size={16} />
+            </Link>
+            <hr />
+            <SignOut />
+          </section>
+        </div>
       </div>
     </>
+  );
+}
+
+function ContactForm({
+  phone,
+  available,
+}: {
+  phone: string;
+  available: boolean;
+}) {
+  const t = useTranslations();
+  const { run, pending, error } = useMutation();
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<z.infer<typeof contactSchema>>({
+    resolver: zodResolver(contactSchema),
+    mode: "onTouched",
+    defaultValues: { phone },
+  });
+  return (
+    <form
+      className="panel form-stack"
+      noValidate
+      onSubmit={handleSubmit((v) => run("contact", v))}
+    >
+      <h2>{t("contactDetails")}</h2>
+      <Field
+        label={t("phone")}
+        error={errors.phone?.message}
+        hint={t("phoneHint")}
+      >
+        <Input
+          type="tel"
+          inputMode="tel"
+          autoComplete="tel"
+          maxLength={30}
+          {...register("phone")}
+        />
+      </Field>
+      <p className="muted small">{t("phoneOwnershipNote")}</p>
+      {!available && (
+        <p role="alert" className="notice">
+          {t("contactSetupRequired")}
+        </p>
+      )}
+      {error && (
+        <p role="alert" className="field-error">
+          {t(error)}
+        </p>
+      )}
+      <Button type="submit" disabled={pending || !available}>
+        {t(pending ? "saving" : "savePhone")}
+      </Button>
+    </form>
   );
 }

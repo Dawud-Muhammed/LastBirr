@@ -22,6 +22,7 @@ export function Onboarding({ name }: { name: string }) {
     formState: { errors, isSubmitting },
   } = useForm<z.infer<typeof onboardingSchema>>({
     resolver: zodResolver(onboardingSchema),
+    mode: "onTouched",
     defaultValues: {
       name,
       balance: "",
@@ -65,7 +66,11 @@ export function Onboarding({ name }: { name: string }) {
             <span className="step-number">01</span>
             <div className="form-stack">
               <Field label={t("name")} error={errors.name?.message}>
-                <Input autoComplete="name" {...register("name")} />
+                <Input
+                  autoComplete="name"
+                  maxLength={80}
+                  {...register("name")}
+                />
               </Field>
               <Field
                 label={t("openingBalance")}
@@ -83,7 +88,7 @@ export function Onboarding({ name }: { name: string }) {
           <div className="form-section">
             <span className="step-number">02</span>
             <div className="form-grid">
-              <Field label={t("horizon")}>
+              <Field label={t("horizon")} error={errors.horizon_type?.message}>
                 <select {...register("horizon_type")}>
                   <option value="allowance">{t("allowance")}</option>
                   <option value="custom">{t("custom")}</option>
@@ -120,7 +125,7 @@ export function Onboarding({ name }: { name: string }) {
                 hint={t("essentialHint")}
                 error={errors.commitmentTitle?.message}
               >
-                <Input {...register("commitmentTitle")} />
+                <Input maxLength={100} {...register("commitmentTitle")} />
               </Field>
               <p className="muted small">{t("savingsHint")}</p>
             </div>

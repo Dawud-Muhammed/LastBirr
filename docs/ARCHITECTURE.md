@@ -49,3 +49,7 @@ Adding back today's discretionary expenses reconstructs the allocation without r
 - `tests`: deterministic TypeScript money tests and real PostgreSQL migration/RLS tests in an isolated PGlite instance.
 
 Server Actions validate inputs and revalidate the app after mutation. UI forms use React Hook Form and Zod; synchronous submission locks and stable transaction UUIDs guard repeated submissions. Financial data is not placed in a shared application cache. Auth uses Supabase email/password and PKCE or verified token-hash callbacks, with allowlisted callback destinations. No fake account mode or service-role credentials exist in the application.
+
+## Contact identity
+
+The additive contact migration stores canonical email/mobile identities in `account_contacts`. A transactional Auth trigger and unique constraints enforce signup uniqueness. RLS allows only the owner to read their contacts; a narrowly scoped RPC changes only the authenticated caller’s phone. Legacy accounts keep their financial records and may add a missing phone in Settings. Validation is shared by client and server, with database validation on contact and financial-text writes. Signup returns an immediate Supabase session; no admin credential is used. See [release notes](RELEASE-TEST.md) for ownership-verification limits and migration order.
